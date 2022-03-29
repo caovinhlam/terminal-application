@@ -7,6 +7,4 @@ class User
         @last_name = last_name
         @task = task
     end
-
 end
-

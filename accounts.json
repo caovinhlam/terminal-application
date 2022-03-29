@@ -2,7 +2,8 @@
   {
     "created_id": [
       22831,
-      6772
+      6772,
+      83013
     ]
   },
   {
@@ -18,6 +19,16 @@
     "firstname": "Cao vinh",
     "lastname": "Lam",
     "username": "hello",
+    "password": "123",
+    "tasks": [
+
+    ]
+  },
+  {
+    "id": 83013,
+    "firstname": "123",
+    "lastname": "123",
+    "username": "123",
     "password": "123",
     "tasks": [
 
