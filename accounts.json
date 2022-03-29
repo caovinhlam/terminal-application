@@ -1,13 +1,24 @@
 [
   {
     "created_id": [
-      22831
+      22831,
+      6772
     ]
   },
   {
     "id": 22831,
-    "user": "chicken",
+    "username": "chicken",
     "password": "secret",
+    "tasks": [
+
+    ]
+  },
+  {
+    "id": 6772,
+    "firstname": "Cao vinh",
+    "lastname": "Lam",
+    "username": "hello",
+    "password": "123",
     "tasks": [
 
     ]
