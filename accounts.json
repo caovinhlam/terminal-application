@@ -1,7 +1,14 @@
 [
   {
     "created_id": [
-
+      77514
     ]
+  },
+  {
+    "id": 77514,
+    "firstname": "caovinh",
+    "lastname": "Lam",
+    "username": "aaa",
+    "password": "aaa"
   }
 ]

@@ -77,18 +77,31 @@ def main_menu(account_file, tasks_file, user_account)
         # View my task
         when 2
             # List it as a numbered list
-            if !user_account.my_task.empty
-                user_account.my_task.display_list
+            choices = create_ordered_list(user_account.get_tasks)
+            if !choices.empty?
+                # Get index position from the hash to delete task in the array in user details
+                task_index = prompt.select("Select which task is DONE:", choices, cyle: true)
+                if task_index != -1
+                    confirm = prompt.yes?("Is this task completed?")
+                    if confirm
+                        user_account.my_task.delete_task(task_index)
+                        puts "Task DONE!"
+                        prompt.keypress("Press any key to continue")
+                    end
+                end
             else
                 puts "Task list is EMPTY!"
+                prompt.keypress("Press any key to continue")
             end
-            prompt.keypress("Press any key to continue")
+            clear_commandline()
         # Create Task
         when 3
             # Appending to the task list
             task = prompt.ask('Input Task:', required: true)
             user_account.my_task.add_task(task)
             puts "Task Added!"
+            prompt.keypress("Press any key to continue")
+            clear_commandlineq()
         # Edit Task
         when 4
             # Making the task list selectable for the user to pick
@@ -96,14 +109,21 @@ def main_menu(account_file, tasks_file, user_account)
             if !choices.empty?
                 # Get index position from the hash to edit the task in the array in user details
                 task_index = prompt.select("Which task would you like to edit?", choices, cyle: true)
-                new_task = prompt.ask("What is the new task?")
-                # Replace old task with new editted task
-                user_account.my_task.update_task(task_index, new_task)
-                puts "Task Updated!"
+                if task_index != -1
+                    new_task = prompt.ask("What is the new task?")
+                    # Replace old task with new editted task
+                    confirm = prompt.yes?("Confirm EDIT?")
+                    if confirm
+                        user_account.my_task.update_task(task_index, new_task)
+                        puts "Task Updated!"
+                        prompt.keypress("Press any key to continue")
+                    end
+                end
             else
                 puts "Task list is EMPTY!"
                 prompt.keypress("Press any key to continue")
             end
+            clear_commandline()
         # Delete Task
         when 5
             # Making the task list selectable for the user to pick
@@ -111,15 +131,19 @@ def main_menu(account_file, tasks_file, user_account)
             if !choices.empty?
                 # Get index position from the hash to delete task in the array in user details
                 task_index = prompt.select("Which task would you like to delete?", choices, cyle: true)
-                confirm = prompt.yes?("Are you sure?")
-                if confirm
-                    user_account.my_task.delete_task(task_index)
-                    puts "Task Deleted!"
+                if task_index != -1
+                    confirm = prompt.yes?("Are you sure?")
+                    if confirm
+                        user_account.my_task.delete_task(task_index)
+                        puts "Task Deleted!"
+                        prompt.keypress("Press any key to continue")
+                    end
                 end
             else
                 puts "Task list is EMPTY!"
                 prompt.keypress("Press any key to continue")
             end
+            clear_commandline()
         when 0
             db_update_user_tasks(tasks_file, user_account)
             puts "byebye"
@@ -145,21 +169,27 @@ def profile_menu(account_file, user_account)
             decision = prompt.select("Which would you like to edit?", cyle: true) do |menu|
                 menu.choice "First Name: #{user_account.first_name}", 1
                 menu.choice "Last Name: #{user_account.last_name}", 2
+                menu.choice "Cancel", 0
             end
-            new_name = prompt.ask("What would you like it to change to?")
-            confirm = prompt.yes?("Are you sure?")
-            if confirm
-                case decision
-                when 1
-                    user_account.first_name = new_name
-                    db_update_users_name(account_file, user_account.id, 1, new_name)
-                    puts "First Name Updated!"
-                when 2
-                    db_update_users_name(account_file, user_account.id, 2, new_name)
-                    user_account.last_name = new_name
-                    puts "Last Name Updated!"
+            if decision != 0
+                new_name = prompt.ask("What would you like it to change to?")
+                confirm = prompt.yes?("Are you sure?")
+                if confirm
+                    case decision
+                    when 1
+                        user_account.first_name = new_name
+                        db_update_users_name(account_file, user_account.id, 1, new_name)
+                        puts "First Name Updated!"
+                        prompt.keypress("Press any key to continue")
+                    when 2
+                        db_update_users_name(account_file, user_account.id, 2, new_name)
+                        user_account.last_name = new_name
+                        puts "Last Name Updated!"
+                        prompt.keypress("Press any key to continue")
+                    end
                 end
             end
+            clear_commandline()
         # Edit user password
         when 2
             password = prompt.mask('Confirm your password:', required: true, echo: true)
@@ -175,6 +205,8 @@ def profile_menu(account_file, user_account)
                     puts "Password changed!"
                 end
             end
+            prompt.keypress("Press any key to continue")
+            clear_commandline()
         when 0
             clear_commandline()
         end
@@ -184,9 +216,12 @@ end
 
 def create_ordered_list(task_list)
     choices = {}
-    task_list.each_with_index do |task, index|
-        # key is the task and the value is index of the task in the array
-        choices["#{index+1}. #{task}"] = index
+    if !task_list.empty?
+        task_list.each_with_index do |task, index|
+            # key is the task and the value is index of the task in the array
+            choices["#{index+1}. #{task}"] = index
+        end
+        choices["Cancel"] = -1
     end
     return choices
 end
