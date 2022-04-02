@@ -1,49 +1,30 @@
 [
   {
-    "created_id": [
-      22831,
-      6772,
-      83013,
-      80332
-    ]
+    "created_id": {
+      "41337": "aaa",
+      "11125": "bbb",
+      "85549": "ccc"
+    }
   },
   {
-    "id": 22831,
-    "username": "chicken",
-    "password": "secret",
-    "tasks": [
-
-    ]
-  },
-  {
-    "id": 6772,
-    "firstname": "Cao vinh",
-    "lastname": "Lam",
-    "username": "hello",
-    "password": "123",
-    "tasks": [
-
-    ]
-  },
-  {
-    "id": 83013,
-    "firstname": "123",
-    "lastname": "123",
-    "username": "123",
-    "password": "123",
-    "tasks": [
-      "423232",
-      "Display this"
-    ]
-  },
-  {
-    "id": 80332,
-    "firstname": "New",
-    "lastname": "Person",
+    "id": "41337",
+    "firstname": "Aaa",
+    "lastname": "Aaa",
     "username": "aaa",
-    "password": "aaa",
-    "tasks": [
-
-    ]
+    "password": "aaa"
+  },
+  {
+    "id": "11125",
+    "firstname": "Bbb",
+    "lastname": "Bbb",
+    "username": "bbb",
+    "password": "bbb"
+  },
+  {
+    "id": "85549",
+    "firstname": "Bbb",
+    "lastname": "Bbb",
+    "username": "ccc",
+    "password": "ccc"
   }
 ]

@@ -16,9 +16,13 @@ require_relative 'controllers/menu_management'
 
 # "
 
-filename = 'accounts.json'
-
-login_menu(filename)
+account_file = 'accounts.json'
+tasks_file = 'tasks_db.json'
+login_menu(account_file, tasks_file)
+# account_parsed = JSON.load_file(account_file, symbolize_names: true)
+# p account_parsed[0][:created_id]
+# id = 29474.to_s.to_sym
+# p account_parsed[0][:created_id].has_key?(id)
 
 # Challenges
 # Menu looping, which menu displays first

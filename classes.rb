@@ -27,18 +27,22 @@ end
 
 class User
     # Reader - read only, writer - write only, accessor is both
-    attr_accessor :first_name, :last_name, :tasks
+    attr_accessor :first_name, :last_name, :my_task
     attr_reader :id
 
     def initialize(id, first_name, last_name, tasks=[])
         @id = id
-        @first_name =  first_name
+        @first_name = first_name
         @last_name = last_name
-        @tasks = Tasks.new(tasks)
+        @my_task = Tasks.new(tasks)
+    end
+
+    def display_name()
+        return "First name: #{@first_name} \nLast name: #{@last_name}"
     end
 
     def get_tasks()
-        return tasks.tasks
+        return @my_task.tasks
     end
 
 end
