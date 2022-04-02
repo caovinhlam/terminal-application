@@ -10,24 +10,24 @@ def login_menu(account_file, tasks_file)
     when 'login'
         puts "You have selected Login"
 
-        # login = false
-        # while !login 
-            username = prompt.ask('Username:', required: true).downcase
-            password = prompt.mask('Password:', required: true, echo: true)
-            user_account = login_account(account_file, username, password)
-            if user_account
-                login = true
-                main_menu(account_file, tasks_file, user_account)
-            end
-        # end
-
+        username = prompt.ask('Username:', required: true).downcase
+        password = prompt.mask('Password:', required: true, echo: true)
+        user_account = login_account(account_file, username, password)
+        if user_account
+            login = true
+            main_menu(account_file, tasks_file, user_account)
+        else
+            puts "Incorrect Username or Password!"
+            login_menu(account_file, tasks_file)
+        end
+            
     when 'create account'
         puts "You have selected Create account"
 
         first_name = prompt.ask('First name:', required: true).capitalize
         last_name = prompt.ask('Last name', required: true).capitalize
+        
         matching_username = false
-
         while !matching_username
             username = prompt.ask('Username:', required: true).downcase
             if validate_username(account_file, username)
@@ -44,12 +44,13 @@ def login_menu(account_file, tasks_file)
             if password != retype_password
                 puts "Password did not match"
             else
-                create_account(account_file, tasks_file, first_name, last_name, username, password)
+                user_account = create_account(account_file, tasks_file, first_name, last_name, username, password)
                 puts "Account created"
+                main_menu(account_file, tasks_file, user_account)
                 break
             end
         end
-        
+
     end
 end
 
@@ -58,7 +59,7 @@ def main_menu(account_file, tasks_file, user_account)
     prompt = TTY::Prompt.new
 
     user_account.my_task.tasks = load_tasks(tasks_file, user_account.id)
-
+    p user_account
     # menu_selection = prompt.select("What would you like to do?", cycle: true) do |menu|
     #     menu.choice "View My Task"
     #     menu.choice "Create Task"
@@ -71,55 +72,58 @@ def main_menu(account_file, tasks_file, user_account)
         menu_selection = prompt.select("What would you like to do?", choices, cycle: true)
         case menu_selection
         when 1
+            clear_commandline()
             profile_menu(account_file, user_account)
         # View my task
         when 2
             # List it as a numbered list
-            user_account.my_task.display_list
+            if !user_account.my_task.empty
+                user_account.my_task.display_list
+            else
+                puts "Task list is EMPTY!"
+            end
             prompt.keypress("Press any key to continue")
         # Create Task
         when 3
             # Appending to the task list
             task = prompt.ask('Input Task:', required: true)
-            # user_details[:tasks] << task
             user_account.my_task.add_task(task)
             puts "Task Added!"
         # Edit Task
         when 4
             # Making the task list selectable for the user to pick
             choices = create_ordered_list(user_account.get_tasks)
-
-            # Get index position from the hash to edit the task in the array in user details
-            task_index = prompt.select("Which task would you like to edit?", choices, cyle: true)
-            new_task = prompt.ask("What is the new task?")
-            # Replace old task with new editted task
-            user_account.my_task.update_task(task_index, new_task)
-            puts "Task Updated!"
+            if !choices.empty?
+                # Get index position from the hash to edit the task in the array in user details
+                task_index = prompt.select("Which task would you like to edit?", choices, cyle: true)
+                new_task = prompt.ask("What is the new task?")
+                # Replace old task with new editted task
+                user_account.my_task.update_task(task_index, new_task)
+                puts "Task Updated!"
+            else
+                puts "Task list is EMPTY!"
+                prompt.keypress("Press any key to continue")
+            end
         # Delete Task
         when 5
             # Making the task list selectable for the user to pick
             choices = create_ordered_list(user_account.get_tasks)
-
-            # Get index position from the hash to delete task in the array in user details
-            task_index = prompt.select("Which task would you like to delete?", choices, cyle: true)
-            confirm = prompt.yes?("Are you sure?")
-            if confirm
-                user_account.my_task.delete_task(task_index)
-                puts "Task Deleted!"
+            if !choices.empty?
+                # Get index position from the hash to delete task in the array in user details
+                task_index = prompt.select("Which task would you like to delete?", choices, cyle: true)
+                confirm = prompt.yes?("Are you sure?")
+                if confirm
+                    user_account.my_task.delete_task(task_index)
+                    puts "Task Deleted!"
+                end
+            else
+                puts "Task list is EMPTY!"
+                prompt.keypress("Press any key to continue")
             end
         when 0
-            menu_selection = 0
-            tasks_parsed = JSON.load_file(tasks_file, symbolize_names: true)
-            tasks_parsed.each do |user|
-                if (user[:id] == user_account.id)
-                    user[:tasks] = user_account.get_tasks
-                    File.write(tasks_file, JSON.pretty_generate(tasks_parsed))
-                    puts "DataBase UPDATED"
-                end
-            end
-            
-            
+            db_update_user_tasks(tasks_file, user_account)
             puts "byebye"
+            break
         end
     end
 end
@@ -131,7 +135,6 @@ def profile_menu(account_file, user_account)
     menu_selection = 1
     # While user hasn't quit the menu
     while menu_selection != 0
-
         puts user_account.display_name()
         choices = {"Edit Profile" => 1, "Change Password" => 2, "Back" => 0}
         
@@ -149,29 +152,33 @@ def profile_menu(account_file, user_account)
                 case decision
                 when 1
                     user_account.first_name = new_name
+                    db_update_users_name(account_file, user_account.id, 1, new_name)
+                    puts "First Name Updated!"
                 when 2
+                    db_update_users_name(account_file, user_account.id, 2, new_name)
                     user_account.last_name = new_name
+                    puts "Last Name Updated!"
                 end
             end
+        # Edit user password
         when 2
             password = prompt.mask('Confirm your password:', required: true, echo: true)
-            if validate_password(account_file, password, user_details.id)
-                
+            # p validate_password(account_file, user_account.id, password)
+            # p account_file
+            if validate_password(account_file, user_account.id, password)
                 new_password = prompt.ask("New Password:")
                 retype_password = prompt.mask("Re-type password:", required: true, echo: true)
                 if new_password != retype_password
-                    puts "Password did not match"
+                    puts "Password did not match!"
                 else
-                    parsed = JSON.load_file(account_file, symbolize_names: true)
-                    parsed.each do |user|
-                        if (user[:id] == userid)
-                            return true
-                        end
-                    end
+                    db_update_user_password(account_file, user_account.id, new_password)
+                    puts "Password changed!"
                 end
             end
-            
+        when 0
+            clear_commandline()
         end
+
     end
 end
 
@@ -182,4 +189,11 @@ def create_ordered_list(task_list)
         choices["#{index+1}. #{task}"] = index
     end
     return choices
+end
+
+def clear_commandline()
+    # MAC & LINUX
+    system("clear")
+    # WINDOWS
+    system("cls")
 end

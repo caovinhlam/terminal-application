@@ -23,6 +23,10 @@ class Tasks
     def delete_task(index)
         @tasks.delete_at(index)
     end
+
+    def empty()
+        return @tasks.empty?
+    end
 end
 
 class User
@@ -30,11 +34,11 @@ class User
     attr_accessor :first_name, :last_name, :my_task
     attr_reader :id
 
-    def initialize(id, first_name, last_name, tasks=[])
+    def initialize(id, first_name, last_name)
         @id = id
         @first_name = first_name
         @last_name = last_name
-        @my_task = Tasks.new(tasks)
+        @my_task = Tasks.new([])
     end
 
     def display_name()

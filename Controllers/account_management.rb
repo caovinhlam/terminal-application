@@ -3,21 +3,26 @@ def create_account(account_file, tasks_file, firstname, lastname, username, pass
     account_parsed = JSON.load_file(account_file, symbolize_names: true)
     tasks_parsed = JSON.load_file(tasks_file, symbolize_names: true)
 
-    random_id = rand(100000).to_s.to_sym
-
+    # random_id = rand(100000).to_s.to_sym
+    random_id = rand(100000)
     # while a duplicaste id exist, create a new one
-    while account_parsed[0][:created_id].key?(random_id)
+    # while account_parsed[0][:created_id].key?(random_id)
+    while account_parsed[0][:created_id].include? random_id
         random_id = rand(100000)
     end
 
     # append new id to created ids
-    account_parsed[0][:created_id][random_id] = username
+    # account_parsed[0][:created_id][random_id] = username
+    account_parsed[0][:created_id] << random_id
 
     # append new account to accounts.json
     account_parsed << { id: random_id, firstname: firstname, lastname: lastname, username: username, password: password }
     tasks_parsed << { id: random_id, tasks: [] }
     File.write(account_file, JSON.pretty_generate(account_parsed))
     File.write(tasks_file, JSON.pretty_generate(tasks_parsed))
+
+    user_account = User.new(random_id, firstname, lastname)
+    return user_account
 end
 
 # Login Account
@@ -44,10 +49,6 @@ def load_tasks(tasks_file, userid)
         end
     end
 end
-
-# def validate_username(account_file, username)
-#     parsed = JSON.load_file(account_file, symbolize_names: true)
-#     parsed.each do |user|
 
 def validate_username(account_file, username)
     parsed = JSON.load_file(account_file, symbolize_names: true)
