@@ -29,9 +29,34 @@ class Tasks
     end
 end
 
+class Assigned_Task
+    # Reader - read only, writer - write only, accessor is both
+    attr_accessor :id, :assignee_id, :assignee_name, :assigned_id, :assigned_name, :task
+
+    def initialize(id, assignee_id, assignee_name, assigned_id, assigned_name, task)
+        @id = id
+        @assignee_id = assignee_id
+        @assignee_name = assignee_name
+        @assigned_id = assigned_id
+        @assigned_name = assigned_name
+        @task = task
+    end
+
+    def to_json()
+        {
+            id: @id, 
+            assignee_id: @assignee_id,
+            assignee_name: @assignee_name,
+            assigned_id: @assigned_id,
+            assigned_name: @assigned_name,
+            task: @task
+        }
+    end
+end
+
 class User
     # Reader - read only, writer - write only, accessor is both
-    attr_accessor :first_name, :last_name, :my_task
+    attr_accessor :first_name, :last_name, :my_task, :assigned_tasks
     attr_reader :id
 
     def initialize(id, first_name, last_name)
@@ -39,14 +64,24 @@ class User
         @first_name = first_name
         @last_name = last_name
         @my_task = Tasks.new([])
+        @assigned_tasks = []
+
     end
 
     def display_name()
         return "First name: #{@first_name} \nLast name: #{@last_name}"
     end
 
+    def full_name()
+        return "#{@first_name} #{@last_name}"
+    end
+
     def get_tasks()
         return @my_task.tasks
+    end
+
+    def get_assigned_tasks()
+        return @assigned_tasks
     end
 
 end

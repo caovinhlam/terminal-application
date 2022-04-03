@@ -60,15 +60,10 @@ def main_menu(account_file, tasks_file, user_account)
 
     user_account.my_task.tasks = load_tasks(tasks_file, user_account.id)
     p user_account
-    # menu_selection = prompt.select("What would you like to do?", cycle: true) do |menu|
-    #     menu.choice "View My Task"
-    #     menu.choice "Create Task"
-    #     menu.choice "Edit Task"
-    # end
     menu_selection = 1
     # While user hasn't quit the menu
     while menu_selection != 0
-        choices = {"View Profile" => 1, "View My Task" => 2, "Create Task" => 3, "Edit Task" => 4, "Delete Task" => 5, "Quit" => 0}
+        choices = {"View Profile" => 1, "View My Task" => 2, "Create Task" => 3, "Edit Task" => 4, "Delete Task" => 5, "Assign Task" => 6, "Quit" => 0}
         menu_selection = prompt.select("What would you like to do?", choices, cycle: true)
         case menu_selection
         when 1
@@ -101,7 +96,7 @@ def main_menu(account_file, tasks_file, user_account)
             user_account.my_task.add_task(task)
             puts "Task Added!"
             prompt.keypress("Press any key to continue")
-            clear_commandlineq()
+            clear_commandline()
         # Edit Task
         when 4
             # Making the task list selectable for the user to pick
@@ -144,6 +139,8 @@ def main_menu(account_file, tasks_file, user_account)
                 prompt.keypress("Press any key to continue")
             end
             clear_commandline()
+        when 6
+            assigned_task(account_file, tasks_file, user_account)
         when 0
             db_update_user_tasks(tasks_file, user_account)
             puts "byebye"
@@ -214,12 +211,122 @@ def profile_menu(account_file, user_account)
     end
 end
 
+def assigned_task(account_file, tasks_file, user_account)
+    prompt = TTY::Prompt.new
+
+    assigned_parsed = JSON.load_file('assigned_tasks.json', symbolize_names: true)
+    # assigned_tasks = []
+    assigned_parsed.each do |task|
+        if task[:assignee_id] == user_account.id
+            p "true"
+            # assigned_tasks << task
+            user_account.get_assigned_tasks << task
+        end
+    end
+    # p assigned_tasks
+    p user_account.assigned_tasks
+
+    menu_selection = 1
+    # While user hasn't quit the menu
+    while menu_selection != 0
+        puts user_account.display_name()
+        choices = {"Assign a Task" => 1, "View Assigned Tasks" => 2, "View Task Assigned to Me" => 3, "Back" => 0}
+        
+        menu_selection = prompt.select("What would you like to do?", choices, cycle: true)
+        case menu_selection
+        # View my profile
+        when 1
+            
+            user_list = []
+            account_parsed = JSON.load_file(account_file, symbolize_names: true)
+            account_parsed.each_with_index do |user, index|
+                if (user[:id] != user_account.id && user[:id] != nil)
+                    user_info = [user[:id], "#{user[:firstname]} #{user[:lastname]}", index]
+                    user_list << user_info
+                end
+            end
+            p user_list
+            choices = {}
+            user_list.each_with_index do |user, index|
+                # key is the task and the value is index of the task in the array
+                choices["#{index+1}. #{user[1]} #ID:#{user[0]}"] = index
+            end
+            choices["Cancel"] = -1
+            # List it as a numbered list
+            # choices = create_ordered_list(user_list)
+            
+            if !choices.empty?
+                # Get index position from the hash to delete task in the array in user details
+                task_index = prompt.select("Which user would you like to assign a task to?", choices, cyle: true)
+                if task_index != -1
+                    p task_index
+                    task = prompt.ask('Input Task:', required: true)
+                    confirm = prompt.yes?("Is this what you want to assign?")
+                    if confirm
+                        assigned_task = Assigned_Task.new(123, user_account.id, user_account.full_name(), user_list[task_index][0], user_list[task_index][1], task)
+                        puts JSON.pretty_generate(assigned_task.to_json)
+                        assigned_parsed = JSON.load_file('assigned_tasks.json', symbolize_names: true)
+                        assigned_parsed << assigned_task.to_json
+                        File.write('assigned_tasks.json', JSON.pretty_generate(assigned_parsed))
+                        user_account.get_assigned_tasks << task
+                    #     puts "Task DONE!"
+                        prompt.keypress("Press any key to continue")
+                    end
+                end
+            else
+                puts "No other user in the app"
+                prompt.keypress("Press any key to continue")
+            end
+            clear_commandline()
+        # View Assigned Tasks
+        when 2
+            
+            # user_account.get_assigned_tasks.each_with_index do |task, index|
+            #     puts "#{index + 1}. Assigned to: #{task[:assigned_name]} \nTask: #{task[:task]}\n"
+            # end
+            # prompt.keypress("Press any key to continue")
+            
+            choices = create_assigned_ordered_list(user_account.get_assigned_tasks)
+            if !choices.empty?
+            #     # Get index position from the hash to delete task in the array in user details
+                task_index = prompt.select("Select a task:", choices, cyle: true)
+                if task_index != -1
+                    confirm = prompt.yes?("What would you like to do?")
+            #         if confirm
+            #             user_account.my_task.delete_task(task_index)
+            #             puts "Task DONE!"
+            #             prompt.keypress("Press any key to continue")
+            #         end
+                end
+            else
+                puts "Task list is EMPTY!"
+                prompt.keypress("Press any key to continue")
+            end
+            # clear_commandline()
+        when 0
+            clear_commandline()
+        end
+
+    end
+end
+
 def create_ordered_list(task_list)
     choices = {}
     if !task_list.empty?
         task_list.each_with_index do |task, index|
             # key is the task and the value is index of the task in the array
             choices["#{index+1}. #{task}"] = index
+        end
+        choices["Cancel"] = -1
+    end
+    return choices
+end
+
+def create_assigned_ordered_list(task_list)
+    choices = {}
+    if !task_list.empty?
+        task_list.each_with_index do |task, index|
+            choices["#{index + 1}. Assigned To: #{task[:assigned_name]} \nTask: #{task[:task]}"] = task[:id]
         end
         choices["Cancel"] = -1
     end
