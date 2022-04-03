@@ -65,7 +65,6 @@ class User
         @last_name = last_name
         @my_task = Tasks.new([])
         @assigned_tasks = []
-
     end
 
     def display_name()
@@ -80,8 +79,20 @@ class User
         return @my_task.tasks
     end
 
-    def get_assigned_tasks()
+    def get_assigned_list()
         return @assigned_tasks
+    end
+
+    def get_assigned_task(index)
+        return @assigned_tasks[index]
+    end
+
+    def update_assigned_task(index, new_task)
+        @assigned_tasks[index][:task] = new_task
+    end
+
+    def delete_assigned_task(index)
+        @assigned_tasks.delete_at(index)
     end
 
 end

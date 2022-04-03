@@ -8,6 +8,7 @@ def db_update_users_name(account_file, userid, name_type, new_name)
                 user[:lastname] = new_name
             end
             File.write(account_file, JSON.pretty_generate(account_parsed))
+            break
         end
     end
 end
@@ -18,6 +19,7 @@ def db_update_user_password(account_file, userid, new_password)
         if (user[:id] == userid)
             user[:password] = new_password
             File.write(account_file, JSON.pretty_generate(account_parsed))
+            break
         end
     end
 end
@@ -28,7 +30,7 @@ def db_update_user_tasks(tasks_file, user_account)
         if (user[:id] == user_account.id)
             user[:tasks] = user_account.get_tasks
             File.write(tasks_file, JSON.pretty_generate(tasks_parsed))
-            puts "DataBase UPDATED"
+            break
         end
     end
 end
