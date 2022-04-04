@@ -19,7 +19,8 @@ require_relative 'controllers/database_management'
 
 account_file = 'accounts.json'
 tasks_file = 'tasks_db.json'
-login_menu(account_file, tasks_file)
+assigned_file = 'assigned_tasks.json'
+login_menu(account_file, tasks_file, assigned_file)
 
 # account_parsed = JSON.load_file(account_file, symbolize_names: true)
 # p account_parsed[0][:created_id]

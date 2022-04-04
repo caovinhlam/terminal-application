@@ -1,7 +1,7 @@
 # require 'tty-prompt'
 # require_relative '../classes'
 
-def login_menu(account_file, tasks_file)
+def login_menu(account_file, tasks_file, assigned_file)
     prompt = TTY::Prompt.new
 
     menu_selection = prompt.select("What would you like to do?", %w(Login Create\ Account), cycle: true).downcase
@@ -15,10 +15,10 @@ def login_menu(account_file, tasks_file)
         user_account = login_account(account_file, username, password)
         if user_account
             login = true
-            main_menu(account_file, tasks_file, user_account)
+            main_menu(account_file, tasks_file, assigned_file, user_account)
         else
             puts "Incorrect Username or Password!"
-            login_menu(account_file, tasks_file)
+            login_menu(account_file, tasks_file, assigned_file)
         end
             
     when 'create account'
@@ -46,7 +46,7 @@ def login_menu(account_file, tasks_file)
             else
                 user_account = create_account(account_file, tasks_file, first_name, last_name, username, password)
                 puts "Account created"
-                main_menu(account_file, tasks_file, user_account)
+                main_menu(account_file, tasks_file, assigned_file, user_account)
                 break
             end
         end
@@ -55,7 +55,7 @@ def login_menu(account_file, tasks_file)
 end
 
 # Menu when user login
-def main_menu(account_file, tasks_file, user_account)
+def main_menu(account_file, tasks_file, assigned_file, user_account)
     prompt = TTY::Prompt.new
 
     user_account.my_task.tasks = load_tasks(tasks_file, user_account.id)
@@ -140,7 +140,7 @@ def main_menu(account_file, tasks_file, user_account)
             end
             clear_commandline()
         when 6
-            assigned_task(account_file, tasks_file, user_account)
+            assigned_task(account_file, assigned_file, user_account)
         when 0
             db_update_user_tasks(tasks_file, user_account)
             puts "byebye"
@@ -211,12 +211,12 @@ def profile_menu(account_file, user_account)
     end
 end
 
-def assigned_task(account_file, tasks_file, user_account)
+def assigned_task(account_file, assigned_file, user_account)
     prompt = TTY::Prompt.new
 
     # if users assigned list hasn't been loaded yet
     if user_account.get_assigned_list.empty?
-        assigned_parsed = JSON.load_file('assigned_tasks.json', symbolize_names: true)
+        assigned_parsed = JSON.load_file(assigned_file, symbolize_names: true)
         assigned_parsed.each do |task|
             if task[:assignee_id] == user_account.id
                 p "true"
@@ -239,6 +239,7 @@ def assigned_task(account_file, tasks_file, user_account)
         # View my profile
         when 1
             
+            # [id, FirstName LastName, index?]
             user_list = []
             account_parsed = JSON.load_file(account_file, symbolize_names: true)
             account_parsed.each_with_index do |user, index|
@@ -273,9 +274,9 @@ def assigned_task(account_file, tasks_file, user_account)
                         end
                         assigned_task = Assigned_Task.new(random_id, user_account.id, user_account.full_name(), user_list[task_index][0], user_list[task_index][1], task)
                         puts JSON.pretty_generate(assigned_task.to_json)
-                        assigned_parsed = JSON.load_file('assigned_tasks.json', symbolize_names: true)
+                        assigned_parsed = JSON.load_file(assigned_file, symbolize_names: true)
                         assigned_parsed << assigned_task.to_json
-                        File.write('assigned_tasks.json', JSON.pretty_generate(assigned_parsed))
+                        File.write(assigned_file, JSON.pretty_generate(assigned_parsed))
                         user_account.get_assigned_list << assigned_task.to_json
                         p user_account.get_assigned_list
                     #     puts "Task DONE!"
@@ -294,15 +295,21 @@ def assigned_task(account_file, tasks_file, user_account)
             #     puts "#{index + 1}. Assigned to: #{task[:assigned_name]} \nTask: #{task[:task]}\n"
             # end
             # prompt.keypress("Press any key to continue")
-            
-            choices = create_assigned_ordered_list(user_account.get_assigned_list)
+            task_list = []
+            account_parsed = JSON.load_file(assigned_file, symbolize_names: true)
+            account_parsed.each_with_index do |task, index|
+                if (task[:assignee_id] == user_account.id)
+                    task_list << task
+                end
+            end
+            # choices = create_assigned_ordered_list(user_account.get_assigned_list)
+            choices = create_assigned_ordered_list(task_list)
             if !choices.empty?
             #     # Get index position from the hash to delete task in the array in user details
                 task_index = prompt.select("Select a task:", choices, cyle: true)
                 if task_index != -1
                     choices = {"Edit Task" => 1, "Delete Task" => 2, "Cancel" => 0}
                     edit_selection = prompt.select("What would you like to do?", choices, cycle: true)
-
                     case edit_selection
                     # View my profile
                     when 1
@@ -310,12 +317,11 @@ def assigned_task(account_file, tasks_file, user_account)
                         # Replace old task with new edited task
                         confirm = prompt.yes?("Confirm EDIT?")
                         if confirm
-                            
-                            assigned_parsed = JSON.load_file('assigned_tasks.json', symbolize_names: true)
+                            assigned_parsed = JSON.load_file(assigned_file, symbolize_names: true)
                             assigned_parsed.each do |task|
                                 if task[:id] == user_account.get_assigned_task(task_index)[:id]
                                     task[:task] = new_task
-                                    File.write('assigned_tasks.json', JSON.pretty_generate(assigned_parsed))
+                                    File.write(assigned_file, JSON.pretty_generate(assigned_parsed))
                                     user_account.update_assigned_task(task_index, new_task)
                                     puts "Task Updated!"
                                     prompt.keypress("Press any key to continue")
@@ -326,13 +332,12 @@ def assigned_task(account_file, tasks_file, user_account)
                     when 2
                         confirm = prompt.yes?("Confirm DELETE?")
                         if confirm
-                            user_account.update_assigned_task(task_index, new_task)
-                            assigned_parsed = JSON.load_file('assigned_tasks.json', symbolize_names: true)
+                            assigned_parsed = JSON.load_file(assigned_file, symbolize_names: true)
                             assigned_parsed.each_with_index do |task, index|
                                 if task[:id] == user_account.get_assigned_task(task_index)[:id]
-                                    assigned_parsed = JSON.load_file('assigned_tasks.json', symbolize_names: true)
+                                    assigned_parsed = JSON.load_file(assigned_file, symbolize_names: true)
                                     assigned_parsed.delete_at(index)
-                                    File.write('assigned_tasks.json', JSON.pretty_generate(assigned_parsed))
+                                    File.write(assigned_file, JSON.pretty_generate(assigned_parsed))
                                     user_account.delete_assigned_task(task_index)
                                     puts "Task Deleted!"
                                     prompt.keypress("Press any key to continue")
@@ -348,8 +353,47 @@ def assigned_task(account_file, tasks_file, user_account)
                 prompt.keypress("Press any key to continue")
             end
             # clear_commandline()
+        # View task assigned to me
         when 3
-            
+            task_list = []
+            account_parsed = JSON.load_file(assigned_file, symbolize_names: true)
+            account_parsed.each_with_index do |task, index|
+                if (task[:assigned_id] == user_account.id)
+                    task_list << task
+                end
+            end
+            p task_list
+            choices = {}
+            if !task_list.empty?
+                task_list.each_with_index do |task, index|
+                    choices["#{index+1}. Assigned To: #{task[:assigned_name]} \nTask: #{task[:task]}"] = index
+                end
+                choices["Cancel"] = -1
+            end
+
+            if !choices.empty?
+                # Get index position from the hash to delete task in the array in user details
+                task_index = prompt.select("Select a task:", choices, cyle: true)
+                if task_index != -1
+                    confirm = prompt.yes?("Is this task completed?")
+                    if confirm
+                        assigned_parsed = JSON.load_file(assigned_file, symbolize_names: true)
+                        assigned_parsed.each_with_index do |task, index|
+                            if task[:id] == task_list[task_index][:id]
+                                assigned_parsed = JSON.load_file(assigned_file, symbolize_names: true)
+                                assigned_parsed.delete_at(index)
+                                File.write(assigned_file, JSON.pretty_generate(assigned_parsed))
+                                puts "Task Completed!"
+                                prompt.keypress("Press any key to continue")
+                                break
+                            end
+                        end
+                    end
+                end
+            else
+                puts "Task list is EMPTY!"
+                prompt.keypress("Press any key to continue")
+            end
         when 0
             clear_commandline()
         end
