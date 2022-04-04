@@ -5,6 +5,7 @@ GEM
       tty-color (~> 0.5)
     tty-color (0.6.0)
     tty-cursor (0.7.1)
+    tty-font (0.5.0)
     tty-prompt (0.23.1)
       pastel (~> 0.8)
       tty-reader (~> 0.8)
@@ -19,6 +20,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  tty-font (~> 0.5.0)
   tty-prompt (~> 0.23.1)
 
 BUNDLED WITH

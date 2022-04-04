@@ -3,16 +3,13 @@ def create_account(account_file, tasks_file, firstname, lastname, username, pass
     account_parsed = JSON.load_file(account_file, symbolize_names: true)
     tasks_parsed = JSON.load_file(tasks_file, symbolize_names: true)
 
-    # random_id = rand(100000).to_s.to_sym
-    random_id = rand(100000)
-    # while a duplicaste id exist, create a new one
-    # while account_parsed[0][:created_id].key?(random_id)
+    # while a duplicated id exist, create a new one
+    random_id = rand(100000)    
     while account_parsed[0][:created_id].include? random_id
         random_id = rand(100000)
     end
 
     # append new id to created ids
-    # account_parsed[0][:created_id][random_id] = username
     account_parsed[0][:created_id] << random_id
 
     # append new account to accounts.json
@@ -27,40 +24,26 @@ end
 
 # Login Account
 def login_account(account_file, username, password)
-    require_relative '../classes'
-
     parsed = JSON.load_file(account_file, symbolize_names: true)
     parsed.each do |user|
         if (user[:username] == username) && (user[:password] == password)
-            puts "You've logged in!"
             user_account = User.new(user[:id], user[:firstname], user[:lastname])
             return user_account
         end
     end
-    return false
+    raise(MatchingError, "Incorrect Username or Password")
 end
 
-def load_tasks(tasks_file, userid)
-    parsed = JSON.load_file(tasks_file, symbolize_names: true)
-    parsed.each do |user|
-        if (user[:id] == userid)
-            puts "Got the task"
-            return user[:tasks]
-        end
-    end
-end
-
+# Checking for duplicate users
 def validate_username(account_file, username)
     parsed = JSON.load_file(account_file, symbolize_names: true)
     parsed.each do |user|
-        if user[:username] == username
-            return true
-        end
+        raise(MatchingError, "Try Again. Username already exist") if user[:username] == username
     end
     return false
 end
 
-
+# Confirming password with user before changing passwords
 def validate_password(account_file, userid, password)
     parsed = JSON.load_file(account_file, symbolize_names: true)
     parsed.each do |user|
@@ -70,3 +53,15 @@ def validate_password(account_file, userid, password)
     end
     return false
 end
+
+# Grab tasks from Database and update into USER class
+def load_tasks(tasks_file, userid)
+    parsed = JSON.load_file(tasks_file, symbolize_names: true)
+    parsed.each do |user|
+        if (user[:id] == userid)
+            return user[:tasks]
+        end
+    end
+end
+
+

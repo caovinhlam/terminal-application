@@ -56,7 +56,7 @@ end
 
 class User
     # Reader - read only, writer - write only, accessor is both
-    attr_accessor :first_name, :last_name, :my_task, :assigned_tasks
+    attr_accessor :first_name, :last_name, :my_task
     attr_reader :id
 
     def initialize(id, first_name, last_name)
@@ -64,11 +64,10 @@ class User
         @first_name = first_name
         @last_name = last_name
         @my_task = Tasks.new([])
-        @assigned_tasks = []
     end
 
     def display_name()
-        return "First name: #{@first_name} \nLast name: #{@last_name}"
+        return "#{@first_name} #{@last_name}"
     end
 
     def full_name()
@@ -77,22 +76,6 @@ class User
 
     def get_tasks()
         return @my_task.tasks
-    end
-
-    def get_assigned_list()
-        return @assigned_tasks
-    end
-
-    def get_assigned_task(index)
-        return @assigned_tasks[index]
-    end
-
-    def update_assigned_task(index, new_task)
-        @assigned_tasks[index][:task] = new_task
-    end
-
-    def delete_assigned_task(index)
-        @assigned_tasks.delete_at(index)
     end
 
 end
