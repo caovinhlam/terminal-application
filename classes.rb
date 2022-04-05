@@ -24,7 +24,7 @@ class Tasks
         @tasks.delete_at(index)
     end
 
-    def empty()
+    def empty?
         return @tasks.empty?
     end
 end
@@ -67,10 +67,6 @@ class User
     end
 
     def display_name()
-        return "#{@first_name} #{@last_name}"
-    end
-
-    def full_name()
         return "#{@first_name} #{@last_name}"
     end
 
