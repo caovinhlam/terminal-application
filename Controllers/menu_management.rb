@@ -15,7 +15,7 @@ def login_menu(account_file, tasks_file, assigned_file)
                 user_account = login_account(account_file, username, password)
                 main_menu(account_file, tasks_file, assigned_file, user_account)
             rescue MatchingError => e
-                puts e
+                display_error(e)
                 retry
             rescue Interrupt
                 puts "\nExit from LOGIN screen"
@@ -32,7 +32,7 @@ def login_menu(account_file, tasks_file, assigned_file)
                     username = prompt.ask('Username:', required: true).downcase.chomp.strip
                     validate_username(account_file, username)
                 rescue MatchingError => e
-                    puts e
+                    display_error(e)
                     retry
                 end
                 # Setting New user password
@@ -41,24 +41,26 @@ def login_menu(account_file, tasks_file, assigned_file)
                     retype_password = prompt.mask("Re-type password:", required: true, echo: true)
                     raise(MatchingError, "Passwords did not match") if password != retype_password
                 rescue MatchingError => e
-                    puts e
+                    display_error(e)
                     retry
                 end
 
                 user_account = create_account(account_file, tasks_file, first_name, last_name, username, password)
                 main_menu(account_file, tasks_file, assigned_file, user_account)
             rescue MatchingError => e
-                puts e
+                display_error(e)
                 retry
             rescue Interrupt
                 puts "\nExit from CREATE ACCOUNT screen"
                 login_menu(account_file, tasks_file, assigned_file)
             end
         when 'quit'
-            puts "\nYou quit the APP. Thank You for using it!"
+            goodbye_message()
+            exit
         end
     rescue Interrupt
-        puts "\nYou quit the APP. Thank You for using it!"
+        goodbye_message()
+        exit
     end
 end
 
@@ -72,7 +74,7 @@ def main_menu(account_file, tasks_file, assigned_file, user_account)
         while menu_selection != 0
             clear_commandline()
             display_title("WELCOME")
-            choices = {"Profile" => 1, "My Task" => 2, "Assigned Task" => 3, "Quit" => 0}
+            choices = {"Profile" => 1, "My Task" => 2, "Assigned Task" => 3, "Logout" => 4, "Quit" => 0}
             menu_selection = prompt.select("What would you like to do?", choices, cycle: true)
             case menu_selection
             #View my profile
@@ -84,13 +86,17 @@ def main_menu(account_file, tasks_file, assigned_file, user_account)
             # View assigned tasks
             when 3
                 assigned_task_menu(account_file, assigned_file, user_account)
+            when 4
+                puts highlight("Logging Out...")
+                prompt.keypress("Press any key to continue")
+                login_menu(account_file, tasks_file, assigned_file)
             when 0
-                puts "\nYou quit the APP. Thank You for using it!"
-                break
+                goodbye_message()
+                exit
             end
         end
     rescue Interrupt
-        puts "Logged Out"
+        puts highlight("Logged Out")
         login_menu(account_file, tasks_file, assigned_file)
     end
 end
@@ -103,7 +109,7 @@ def profile_menu(account_file, user_account)
         while menu_selection != 0
             clear_commandline()
             display_title("PROFILE")
-            puts "Welcome #{user_account.display_name()}"
+            puts green_text("WELCOME #{user_account.display_name()}")
             choices = {"Edit Profile" => 1, "Change Password" => 2, "Back" => 0}
             
             menu_selection = prompt.select("What would you like to do?", choices, cycle: true)
@@ -118,18 +124,18 @@ def profile_menu(account_file, user_account)
 
                 if decision != 0
                     new_name = prompt.ask("What would you like it to change to?", required: true).chomp.strip
-                    confirm = prompt.yes?("Confirm EDIT?")
+                    confirm = prompt.yes?(highlight("Confirm EDIT?"))
                     if confirm
                         case decision
                         when 1
                             user_account.first_name = new_name
                             db_update_users_name(account_file, user_account.id, 1, new_name)
-                            puts "First Name Updated!"
+                            puts highlight("First Name Updated!")
                             prompt.keypress("Press any key to continue")
                         when 2
                             db_update_users_name(account_file, user_account.id, 2, new_name)
                             user_account.last_name = new_name
-                            puts "Last Name Updated!"
+                            puts highlight("Last Name Updated!")
                             prompt.keypress("Press any key to continue")
                         end
                     end
@@ -140,7 +146,7 @@ def profile_menu(account_file, user_account)
                     password = prompt.mask('Confirm your password:', required: true, echo: true)
                     raise(ConfirmationError, "Incorrect Password") if !validate_password(account_file, user_account.id, password)
                 rescue ConfirmationError => e
-                    puts e
+                    display_error(e)
                     retry
                 end
                 # User assigning new password
@@ -149,11 +155,11 @@ def profile_menu(account_file, user_account)
                     retype_password = prompt.mask("Re-type password:", required: true, echo: true)
                     raise(MatchingError, "Passwords did not match") if new_password != retype_password
                 rescue MatchingError => e
-                    puts e
+                    display_error(e)
                     retry
                 end
                 db_update_user_password(account_file, user_account.id, new_password)
-                puts "Password changed!"
+                puts highlight("Password changed!")
                 prompt.keypress("Press any key to continue")
             when 0
                 break
@@ -189,15 +195,15 @@ def my_task_menu(account_file, tasks_file, user_account)
                     # Get index position from the hash to delete task in the array in user details
                     task_index = prompt.select("Select which task is DONE:", choices, cyle: true)
                     if task_index != -1
-                        confirm = prompt.yes?("Is this task completed?")
+                        confirm = prompt.yes?(highlight("Is this task completed?"))
                         if confirm
                             user_account.my_task.delete_task(task_index)
-                            puts "Task DONE!"
+                            puts highlight("Task DONE!")
                             prompt.keypress("Press any key to continue")
                         end
                     end
                 else
-                    puts "Task list is EMPTY!"
+                    puts highlight("Task list is EMPTY!")
                     prompt.keypress("Press any key to continue")
                 end
             # Create Task
@@ -205,7 +211,7 @@ def my_task_menu(account_file, tasks_file, user_account)
                 # Appending to the task list
                 task = prompt.ask('Input Task:', required: true).chomp.strip
                 user_account.my_task.add_task(task)
-                puts "Task Added!"
+                puts highlight("Task Added!")
                 prompt.keypress("Press any key to continue")
             # Edit Task
             when 3
@@ -217,15 +223,15 @@ def my_task_menu(account_file, tasks_file, user_account)
                     if task_index != -1
                         new_task = prompt.ask("What is the new task?", required: true).chomp.strip
                         # Replace old task with new editted task
-                        confirm = prompt.yes?("Confirm EDIT?")
+                        confirm = prompt.yes?(highlight("Confirm EDIT?"))
                         if confirm
                             user_account.my_task.update_task(task_index, new_task)
-                            puts "Task Updated!"
+                            puts highlight("Task Updated!")
                             prompt.keypress("Press any key to continue")
                         end
                     end
                 else
-                    puts "Task list is EMPTY!"
+                    puts highlight("Task list is EMPTY!")
                     prompt.keypress("Press any key to continue")
                 end
             # Delete Task
@@ -236,15 +242,15 @@ def my_task_menu(account_file, tasks_file, user_account)
                     # Get index position from the hash to delete task in the array in user details
                     task_index = prompt.select("Which task would you like to delete?", choices, cyle: true)
                     if task_index != -1
-                        confirm = prompt.yes?("Confirm DELETE?")
+                        confirm = prompt.yes?(highlight("Confirm DELETE?"))
                         if confirm
                             user_account.my_task.delete_task(task_index)
-                            puts "Task Deleted!"
+                            puts highlight("Task Deleted!")
                             prompt.keypress("Press any key to continue")
                         end
                     end
                 else
-                    puts "Task list is EMPTY!"
+                    puts highlight("Task list is EMPTY!")
                     prompt.keypress("Press any key to continue")
                 end
                 clear_commandline()
@@ -285,19 +291,19 @@ def assigned_task_menu(account_file, assigned_file, user_account)
                         # If user didn't cancel
                         if user_index != -1
                             task = prompt.ask('Input Task:', required: true).chomp.strip
-                            confirm = prompt.yes?("Is this what you want to assign?")
+                            confirm = prompt.yes?(highlight("Is this what you want to assign?"))
                             if confirm
                                 db_create_assigned_task(assigned_file, user_account, user_list, user_index, task)
-                                puts "Assigned TASK!"
+                                puts highlight("Assigned TASK!")
                                 prompt.keypress("Press any key to continue")
                             end
                         end
                     else
-                        puts "No other USERS in the APP"
+                        puts highlight("No other USERS in the APP")
                         prompt.keypress("Press any key to continue")
                     end
                 rescue Interrupt
-                    puts "Action Cancelled"
+                    display_error("Action Cancelled")
                     retry
                 end
             # View Assigned Tasks
@@ -315,29 +321,29 @@ def assigned_task_menu(account_file, assigned_file, user_account)
                             # Edit Task and update in the Database
                             when 1
                                 new_task = prompt.ask("What is the new task?", required: true).chomp.strip
-                                confirm = prompt.yes?("Confirm EDIT?")
+                                confirm = prompt.yes?(highlight("Confirm EDIT?"))
                                 # Replace old task with new edited task
                                 if confirm
                                     db_update_assigned_task(assigned_file, assigned_list[task_index], new_task)
-                                    puts "Task Updated!"
+                                    puts highlight("Task Updated!")
                                     prompt.keypress("Press any key to continue")
                                 end
                             # Delete Task and update in the Database
                             when 2
-                                confirm = prompt.yes?("Confirm DELETE?")
+                                confirm = prompt.yes?(highlight("Confirm DELETE?"))
                                 if confirm
                                     db_delete_assigned_task(assigned_file, assigned_list[task_index])
-                                    puts "Task Deleted!"
+                                    puts highlight("Task Deleted!")
                                     prompt.keypress("Press any key to continue")
                                 end
                             end
                         end
                     else
-                        puts "Task list is EMPTY!"
+                        puts highlight("Task list is EMPTY!")
                         prompt.keypress("Press any key to continue")
                     end
                 rescue Interrupt
-                    puts "Action Cancelled"
+                    display_error("Action Cancelled")
                     retry
                 end
             # View task assigned to me
@@ -349,20 +355,20 @@ def assigned_task_menu(account_file, assigned_file, user_account)
                     if !choices.empty?
                         task_index = prompt.select("Select a task:", choices, cyle: true)
                         if task_index != -1
-                            confirm = prompt.yes?("Is this task completed?")
+                            confirm = prompt.yes?(highlight("Is this task completed?"))
                             # Delete Task and update in the Database
                             if confirm
                                 db_delete_assigned_task(assigned_file, assigned_to_me[task_index])
-                                puts "Task Completed!"
+                                puts highlight("Task Completed!")
                                 prompt.keypress("Press any key to continue")
                             end
                         end
                     else
-                        puts "Task list is EMPTY!"
+                        puts highlight("Task list is EMPTY!")
                         prompt.keypress("Press any key to continue")
                     end
                 rescue Interrupt
-                    puts "Action Cancelled"
+                    display_error("Action Cancelled")
                     retry
                 end
             when 0
